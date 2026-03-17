@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>散布図・相関関係可視化ツール</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f8f9fa; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        button { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; background-color: #007bff; color: white; transition: 0.3s; }
+        button:hover { background-color: #0056b3; }
+        .result-box { padding: 15px; border-radius: 5px; border-left: 5px solid #007bff; background: #e9ceec33; }
+        h1 { color: #333; }
+        canvas { max-width: 100%; height: 400px; }
+    </style>
+</head>
+<body>
+
+    <h1>📊 散布図・相関関係可視化ツール</h1>
+    <p>情報Ⅰの学習用：ブラウザだけで動く静的サイト版です。</p>
+
+    <div class="card">
+        <h3>🕹️ データセットを選択</h3>
+        <div class="controls">
+            <button onclick="updateData('negative')">📱 スマホと点数 (負の相関)</button>
+            <button onclick="updateData('positive')">👟 身長と靴 (正の相関)</button>
+            <button onclick="updateData('none')">🎲 出席番号と点数 (無相関)</button>
+        </div>
+        <p>データ件数: <input type="number" id="dataCount" value="50" min="10" max="200" style="width: 50px;"> 
+        <button onclick="generateNewData()" style="background-color: #28a745;">🔄 データを再生成</button></p>
+    </div>
+
+    <div class="card">
+        <canvas id="scatterChart"></canvas>
+    </div>
+
+    <div class="card result-box" id="resultArea">
+        <h3>📉 分析結果</h3>
+        <p id="corrValue">相関係数 (r): 計算中...</p>
+        <p id="corrJudge">判定: -</p>
+    </div>
+
+<script>
+let chart;
+let currentMode = 'negative';
+
+// 相関係数(r)の計算関数
+function calculateCorrelation(data) {
+    const n = data.length;
+    const x = data.map(d => d.x);
+    const y = data.map(d => d.y);
+    
+    const sumX = x.reduce((a, b) => a + b, 0);
+    const sumY = y.reduce((a, b) => a + b, 0);
+    const sumXY = x.reduce((sum, v, i) => sum + v * y[i], 0);
+    const sumX2 = x.reduce((sum, v) => sum + v * v, 0);
+    const sumY2 = y.reduce((sum, v) => sum + v * v, 0);
+
+    const numerator = n * sumXY - sumX * sumY;
+    const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+    
+    return denominator === 0 ? 0 : numerator / denominator;
+}
+
+// データ生成関数
+function generateData(type, n) {
+    let data = [];
+    for (let i = 0; i < n; i++) {
+        if (type === 'negative') {
+            let x = Math.random() * 5.5 + 0.5;
+            let y = 100 - (x * 12) + (Math.random() * 20 - 10);
+            data.push({x: Math.round(x*10)/10, y: Math.round(Math.max(0, Math.min(100, y)))});
+        } else if (type === 'positive') {
+            let x = 150 + Math.random() * 30;
+            let y = x * 0.15 + (Math.random() * 2 - 1);
+            data.push({x: Math.round(x*10)/10, y: Math.round(y*2)/2});
+        } else {
+            data.push({x: i + 1, y: Math.floor(Math.random() * 101)});
+        }
+    }
+    return data;
+}
+
+function updateData(type) {
+    currentMode = type;
+    generateNewData();
+}
+
+function generateNewData() {
+    const n = parseInt(document.getElementById('dataCount').value);
+    const data = generateData(currentMode, n);
+    const r = calculateCorrelation(data);
+
+    // 相関の判定
+    let judge = "";
+    const rAbs = Math.abs(r);
+    if (rAbs >= 0.7) judge = "✅ 強い相関があります。";
+    else if (rAbs >= 0.4) judge = "⚠️ 中程度の相関があります。";
+    else if (rAbs >= 0.2) judge = "🧐 弱い相関があります。";
+    else judge = "✖️ ほとんど相関がありません。";
+
+    document.getElementById('corrValue').innerText = `相関係数 (r): ${r.toFixed(3)}`;
+    document.getElementById('corrJudge').innerText = `判定: ${judge}`;
+
+    // グラフ更新
+    chart.data.datasets[0].data = data;
+    chart.data.datasets[0].label = currentMode === 'negative' ? 'スマホ時間 vs 点数' : 
+                                   currentMode === 'positive' ? '身長 vs 靴のサイズ' : '出席番号 vs 点数';
+    chart.update();
+}
+
+// 初回起動時のチャート作成
+const ctx = document.getElementById('scatterChart').getContext('2d');
+chart = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+        datasets: [{
+            label: 'データ',
+            data: [],
+            backgroundColor: 'rgba(0, 123, 255, 0.6)'
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            x: { type: 'linear', position: 'bottom', title: { display: true, text: 'X軸' } },
+            y: { title: { display: true, text: 'Y軸' } }
+        }
+    }
+});
+
+updateData('negative');
+</script>
+
+</body>
+</html>
