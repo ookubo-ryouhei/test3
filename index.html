@@ -23,9 +23,12 @@
     <div class="card">
         <h3>🕹️ データセットを選択</h3>
         <div class="controls">
-            <button onclick="updateData('negative')">📱 スマホと点数</button>  // (負の相関)
-            <button onclick="updateData('positive')">👟 身長と靴</button>  // (正の相関)
-            <button onclick="updateData('none')">🎲 出席番号と点数</button>  // (無相関)
+            <button onclick="updateData('negative')">📱 スマホと点数</button>
+            // (負の相関)
+            <button onclick="updateData('positive')">👟 身長と靴</button>
+            // (正の相関)
+            <button onclick="updateData('none')">🎲 出席番号と点数</button>
+            // (無相関)
         </div>
         <p>データ件数: <input type="number" id="dataCount" value="10" min="10" max="200" style="width: 50px;"> 
         <button onclick="generateNewData()" style="background-color: #28a745;">🔄 データを再生成</button></p>
